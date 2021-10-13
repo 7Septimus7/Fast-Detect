@@ -16,14 +16,13 @@
 
 package com.processdataquality.praeclarus.workspace.node;
 
+import com.processdataquality.praeclarus.action.Action;
 import com.processdataquality.praeclarus.annotations.Plugin;
 import com.processdataquality.praeclarus.plugin.PDQPlugin;
 import tech.tablesaw.api.Table;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Michael Adams
@@ -35,14 +34,22 @@ public abstract class Node {
     private final Set<Node> _previous;
     private List<Table> _inputs;
     private Table _output;
+    private HashMap<Node, Table> _multipleOutput;
     private final PDQPlugin _plugin;
     private boolean _completed = false;
+    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
+    private final int _id;
 
 
     protected Node(PDQPlugin plugin) {
+        this(plugin, ID_GENERATOR.incrementAndGet());
+    }
+
+    protected Node(PDQPlugin plugin, int id) {
         _plugin = plugin;
         _next = new HashSet<>();
         _previous = new HashSet<>();
+        _id = id;
     }
 
     
@@ -155,5 +162,27 @@ public abstract class Node {
         return table;
     }
 
+    public HashMap<Node, Table> getMultipleOutput() { return _multipleOutput; }
 
+    protected void setMultipleOutput(HashMap<Node, Table> s) { _multipleOutput = s; }
+
+    public boolean hasMultipleOutput() { return _multipleOutput != null; }
+
+    public HashMap<Node, Table> clearMultipleOutput() {
+        HashMap<Node, Table> s = _multipleOutput;
+        _multipleOutput.clear();
+        return s;
+    }
+
+    public boolean allowsExpand() {
+        if (getPlugin() instanceof Action) {
+            return ((Action) getPlugin()).isExpandable();
+        }
+        return false;
+
+    }
+
+    public int getId() {
+        return _id;
+    }
 }

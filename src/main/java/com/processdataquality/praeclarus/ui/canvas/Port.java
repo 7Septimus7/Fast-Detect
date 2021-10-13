@@ -26,25 +26,38 @@ public class Port implements CanvasPrimitive {
 
     public static final double RADIUS = 6;
 
-    private final Vertex parent;
+    private final CanvasPrimitive parent;
     private final Style style;
 
 
-    public Port(Vertex v, Style style) {
+    public Port(CanvasPrimitive v, Style style) {
         parent = v;
         this.style = style;
     }
 
     public double x() {
-        double px = parent.x();
-        return style == Style.INPUT ? px : px + Vertex.WIDTH;
+        if (parent instanceof Vertex) {
+            double px = ((Vertex) parent).x();
+            return style == Style.INPUT ? px : px + Vertex.WIDTH;
+        } else if(parent instanceof ExpandedVertex) {
+            double px = ((ExpandedVertex) parent).x();
+            return style == Style.INPUT ? px : px + ExpandedVertex.WIDTH;
+        }
+        else return 0; //TODO
     }
 
     public double y() {
-        return parent.y() + Vertex.HEIGHT / 2 ;
+        if (parent instanceof Vertex) {
+            return ((Vertex) parent).y() + Vertex.HEIGHT / 2;
+        } else if(parent instanceof ExpandedVertex) {
+            Double Height = ((ExpandedVertex) parent).getHeight();
+            return ((ExpandedVertex) parent).y() + Height / 2;
+        } else return 0; //TODO
     }
 
-    public Vertex getParent() { return parent; }
+    public CanvasPrimitive getParent() {
+        return parent;
+    }
 
     public Style getStyle() { return style; }
 

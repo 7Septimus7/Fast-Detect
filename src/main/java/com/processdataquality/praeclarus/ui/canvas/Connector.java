@@ -38,17 +38,24 @@ public class Connector implements CanvasPrimitive {
         _source = source;
         _target = target;
     }
+    public Connector clone() {
+        return new Connector(_source, _target);
+    }
 
-    public Vertex getSource() {
+    public CanvasPrimitive getSource() {
         return _source.getParent();
     }
 
-    public Vertex getTarget() {
+    public CanvasPrimitive getTarget() {
         return _target.getParent();
     }
 
     public boolean connects(Vertex vertex) {
         return getSource().equals(vertex) || getTarget().equals(vertex);
+    }
+
+    public boolean connects(ExpandedVertex expandedVertex) {
+        return getSource().equals(expandedVertex) || getTarget().equals(expandedVertex);
     }
 
     public boolean contains(double x, double y) {
@@ -62,8 +69,10 @@ public class Connector implements CanvasPrimitive {
 
     public JSONObject asJson() throws JSONException {
         JSONObject json = new JSONObject();
-        json.put("source", getSource().getID());
-        json.put("target", getTarget().getID());
+        if (getSource() instanceof Vertex) {
+            json.put("source", ((Vertex) getSource()).getID());
+            json.put("target", ((Vertex) getTarget()).getID());
+        }
         return json;
     }
 

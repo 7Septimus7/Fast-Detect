@@ -40,18 +40,28 @@ public class VertexStateIndicator {
     private static final double LINE_WIDTH = 1;
     private static final double X_INSET = 12;
     private static final double Y_INSET = 12;
+    private final CanvasPrimitive _parent;
 
     private State state;
 
-    public VertexStateIndicator() { state = State.DORMANT; }
+    public VertexStateIndicator(CanvasPrimitive parent) {
+        _parent = parent;
+        state = State.DORMANT; }
 
 
     public void setState(State s) { state = s; }
 
 
     public void render(double vx, double vy, Context2D ctx) {
-        double x = vx + Vertex.WIDTH - X_INSET;
-        double y = vy + Vertex.HEIGHT - Y_INSET;
+        double x = 0;
+        double y = 0;
+        if (_parent instanceof Vertex) {
+            x = vx + Vertex.WIDTH - X_INSET;
+            y = vy + Vertex.HEIGHT - Y_INSET;
+        } else if (_parent instanceof ExpandedVertex) {
+            x = vx + ExpandedVertex.WIDTH - X_INSET;
+            y = vy + ((ExpandedVertex) _parent).HEIGHT - Y_INSET;
+        }
 
         ctx.lineWidth(LINE_WIDTH);
         ctx.strokeStyle("gray");

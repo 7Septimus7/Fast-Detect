@@ -16,13 +16,11 @@
 
 package com.processdataquality.praeclarus.ui.component;
 
+import com.processdataquality.praeclarus.action.Action;
 import com.processdataquality.praeclarus.plugin.PDQPlugin;
 import com.processdataquality.praeclarus.plugin.PluginService;
 import com.processdataquality.praeclarus.ui.MainView;
-import com.processdataquality.praeclarus.ui.canvas.Canvas;
-import com.processdataquality.praeclarus.ui.canvas.CanvasPrimitive;
-import com.processdataquality.praeclarus.ui.canvas.Vertex;
-import com.processdataquality.praeclarus.ui.canvas.Workflow;
+import com.processdataquality.praeclarus.ui.canvas.*;
 import com.processdataquality.praeclarus.workspace.Workspace;
 import com.processdataquality.praeclarus.workspace.node.Node;
 import com.processdataquality.praeclarus.workspace.node.NodeFactory;
@@ -53,7 +51,7 @@ public class PipelinePanel extends VerticalLayout {
     private final Workflow _workflow;                 // frontend
     private final MainView _parent;
     private final RunnerButtons _runnerButtons;
-    private final Canvas _canvas = new Canvas(1600, 400);
+    private final Canvas _canvas = new Canvas(1600, 1000);
 
 
     public PipelinePanel(MainView parent) {
@@ -79,7 +77,7 @@ public class PipelinePanel extends VerticalLayout {
         return buttons;
     }
 
-    
+
     private VerticalLayout createCanvasContainer() {
         DropTarget<Canvas> dropTarget = DropTarget.create(_canvas);
         dropTarget.setDropEffect(DropEffect.COPY);
@@ -90,6 +88,11 @@ public class PipelinePanel extends VerticalLayout {
                     TreeItem item = droppedItems.get(0);     // only one is dropped
                     Node node = addPluginInstance(item);
                     _workflow.addVertex(node);
+                    if (node.getPlugin() instanceof Action) {
+                        if (((Action) node.getPlugin()).isExpandable()) {
+                            _workflow.addExpand(node);
+                        }
+                    }
                     _runnerButtons.enable();
                 }
             }
@@ -105,6 +108,10 @@ public class PipelinePanel extends VerticalLayout {
     public void changedSelected(Node selected) {
         showPluginProperties(selected);
         _runnerButtons.enable();
+    }
+
+    public void changedSelectedSmallVertex(Node selected) {
+        showPluginProperties(selected);
     }
 
 
@@ -135,7 +142,7 @@ public class PipelinePanel extends VerticalLayout {
         showPluginProperties(node);
         return node;
     }
-    
+
 
     public Workspace getWorkspace() { return _workspace; }
 

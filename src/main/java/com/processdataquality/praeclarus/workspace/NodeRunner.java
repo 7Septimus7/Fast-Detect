@@ -16,6 +16,7 @@
 
 package com.processdataquality.praeclarus.workspace;
 
+import com.processdataquality.praeclarus.action.InnerJoin;
 import com.processdataquality.praeclarus.workspace.node.Node;
 import com.processdataquality.praeclarus.workspace.node.NodeRunnerListener;
 
@@ -84,6 +85,9 @@ public class NodeRunner {
             }
         }
         announceNodeStarted(node);
+        if (node.getPlugin() instanceof InnerJoin) {
+            ((InnerJoin) node.getPlugin()).setNode(node);
+        }
         node.run();
         if (node.hasCompleted()) {
             setLastCompletedNode(node);

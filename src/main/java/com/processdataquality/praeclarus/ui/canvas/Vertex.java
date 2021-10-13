@@ -37,7 +37,7 @@ public class Vertex implements CanvasPrimitive {
 
     private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
 
-    private final VertexStateIndicator _indicator = new VertexStateIndicator();
+    private final VertexStateIndicator _indicator = new VertexStateIndicator(this);
     private final int _id;
     private final Node _node;
 
@@ -47,6 +47,7 @@ public class Vertex implements CanvasPrimitive {
     private Port _inPort;
     private Port _outPort;
     private Point _dragOffset;
+    private Expand _expand;
 
 
     public Vertex(double x, double y, Node node) {
@@ -65,6 +66,9 @@ public class Vertex implements CanvasPrimitive {
         }
         if (node.allowsOutput()) {
             _outPort = new Port(this, Port.Style.OUTPUT);
+        }
+        if (node.allowsExpand()){
+             _expand = new Expand(this);
         }
     }
 
@@ -104,6 +108,7 @@ public class Vertex implements CanvasPrimitive {
 
     public Port getOutputPort() { return _outPort; }
 
+    public Expand getExpand() { return _expand; }
 
     public void setRunState(VertexStateIndicator.State state) {
         _indicator.setState(state);
@@ -157,7 +162,9 @@ public class Vertex implements CanvasPrimitive {
 
         renderPorts(ctx, selected);
         renderLabel(ctx, colour);
+        renderExpand(ctx, selected);
     }
+
 
 
     private void renderVertex(Context2D ctx) {
@@ -171,6 +178,13 @@ public class Vertex implements CanvasPrimitive {
         ctx.lineTo(_x, _y + CORNER_RADIUS);
         ctx.quadraticCurveTo(_x, _y, _x + CORNER_RADIUS, _y);
         ctx.closePath();
+    }
+
+
+    private void renderExpand(Context2D ctx, CanvasPrimitive selected) {
+        if (_expand != null) {
+            _expand.render(ctx, selected);
+        }
     }
 
 

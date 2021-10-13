@@ -88,4 +88,14 @@ public class DistortedLabelLevenshtein extends AbstractDistortedLabel {
         Table newMaster = lev.repair(master, changes);
         System.out.println(newMaster.toString());
     }
+
+    @Override
+    public int imperfektionDetected() {
+        return 7; //TODO just a dummy
+    }
+
+    @Override
+    public double expectedDetections() {
+        return 0.1;
+    }
 }

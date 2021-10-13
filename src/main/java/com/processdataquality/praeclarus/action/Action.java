@@ -17,8 +17,10 @@
 package com.processdataquality.praeclarus.action;
 
 import com.processdataquality.praeclarus.plugin.PDQPlugin;
+import com.processdataquality.praeclarus.workspace.node.Node;
 import tech.tablesaw.api.Table;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -27,5 +29,10 @@ import java.util.List;
  */
 public interface Action extends PDQPlugin {
 
-    Table run(List<Table> inputSet);
+    /**
+     * @return true if this plugin is expandable to allow selecting options in the workflow
+     */
+    boolean isExpandable();
+
+    HashMap<Node, Table> run(List<Table> inputSet);
 }

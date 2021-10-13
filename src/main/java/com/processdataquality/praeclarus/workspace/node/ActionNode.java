@@ -17,6 +17,7 @@
 package com.processdataquality.praeclarus.workspace.node;
 
 import com.processdataquality.praeclarus.action.Action;
+import com.processdataquality.praeclarus.action.FastDetect;
 import com.processdataquality.praeclarus.plugin.PDQPlugin;
 
 /**
@@ -25,13 +26,21 @@ import com.processdataquality.praeclarus.plugin.PDQPlugin;
  */
 public class ActionNode extends Node {
 
+    private PDQPlugin plugin;
+
     public ActionNode(PDQPlugin plugin) {
         super(plugin);
+        this.plugin = plugin;
     }
 
     @Override
     public void run() {
-        setOutput(((Action) getPlugin()).run(getInputs()));
+        if (plugin instanceof FastDetect) {
+            setMultipleOutput(((Action) getPlugin()).run(getInputs()));
+            setOutput(getInputs().get(0));
+        } else {
+            setOutput(((Action) getPlugin()).run(getInputs()).values().iterator().next());
+        }
         setCompleted(true);
     }
 }

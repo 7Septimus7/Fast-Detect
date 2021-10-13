@@ -18,8 +18,10 @@ package com.processdataquality.praeclarus.action;
 
 import com.processdataquality.praeclarus.annotations.Plugin;
 import com.processdataquality.praeclarus.plugin.Options;
+import com.processdataquality.praeclarus.workspace.node.Node;
 import tech.tablesaw.api.Table;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -36,17 +38,21 @@ public class InnerJoin implements Action {
 
     private final Options options = new Options();
 
+    private Node node;
+
     public InnerJoin() { }
 
     @Override
-    public Table run(List<Table> inputList) {
+    public HashMap<Node, Table> run(List<Table> inputList) {
+        HashMap<Node, Table> result = new HashMap<>();
         if (inputList.size() < 2) {
             throw new IllegalArgumentException("This action requires at least two tables as input.");
         }
         Table t1 = inputList.remove(0);
         String colNames = getOptions().get("Columns").asString();
-        return t1.joinOn(colNames).inner(true,
-                inputList.toArray(new Table[] {}));
+        result.put(node, t1.joinOn(colNames).inner(true,
+                inputList.toArray(new Table[] {})));
+        return result;
     }
 
 
@@ -67,4 +73,12 @@ public class InnerJoin implements Action {
     @Override
     public int getMaxOutputs() {
         return 1;
-    }}
+    }
+
+    @Override
+    public boolean isExpandable() { return false; }
+
+    public void setNode(Node node) {
+        this.node = node;
+    }
+}

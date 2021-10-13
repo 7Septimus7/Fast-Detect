@@ -16,6 +16,8 @@
 
 package com.processdataquality.praeclarus.ui.component;
 
+import com.processdataquality.praeclarus.action.FastDetect;
+import com.processdataquality.praeclarus.pattern.ImperfectionPattern;
 import com.processdataquality.praeclarus.ui.MainView;
 import com.processdataquality.praeclarus.ui.util.NodeWriter;
 import com.processdataquality.praeclarus.workspace.NodeRunner;
@@ -29,6 +31,8 @@ import com.vaadin.flow.component.grid.FooterRow;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -49,6 +53,13 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
     Tabs tabs = new Tabs();
     VerticalScrollLayout pages = new VerticalScrollLayout();
     Map<Tab, Component> tabsToPages = new HashMap<>();
+    private HashMap<Integer, Map<String, Boolean>> expanded = new HashMap<>();
+    private HashMap<Integer, Map<String, Grid<Row>>> detectResult = new HashMap<>();
+    private HashMap<Integer, Tab> nodeTabs = new HashMap<>();
+    private static final TreeData _treeData = new TreeData();
+    private static final List<TreeItem> _list = _treeData.getItems();
+    private HashMap<Integer, Map<String, Integer>> totalDetections = new HashMap<>();
+    private HashMap<Integer, Map<String, Double>> expectedValues = new HashMap<>();
 
     private final MainView _parent;
 
@@ -76,16 +87,23 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
     }
 
     @Override
-    public void nodeStarted(Node node) { }
+    public void nodeStarted(Node node) {
+    }
 
     @Override
-    public void nodePaused(Node node) { addResult(node); }
+    public void nodePaused(Node node) {
+        addResult(node);
+    }
 
     @Override
-    public void nodeCompleted(Node node) { addResult(node); }
+    public void nodeCompleted(Node node) {
+        addResult(node);
+    }
 
     @Override
-    public void nodeRollback(Node node) { removeResult(node); }
+    public void nodeRollback(Node node) {
+        removeResult(node);
+    }
 
 
     public void addResult(Node node) {
@@ -93,32 +111,173 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
             new NodeWriter().write(node);
             return;
         }
-        
-        Grid<Row> grid = createGrid(node);
-        removeTopMargin(grid);
+
+        if (node.getPlugin() instanceof FastDetect) {
+            presentDetectResults(node);
+
+        } else {
+
+            Grid<Row> grid = createGrid(node);
+            removeTopMargin(grid);
+
+            VerticalScrollLayout page;
+            Tab tab = getTab(node);
+            if (tab != null) {
+                page = (VerticalScrollLayout) tabsToPages.get(tab);
+                page.removeAll();
+                page.add(grid);
+            } else {
+                tab = new ResultTab(node);
+                page = new VerticalScrollLayout(grid);
+                removeTopMargin(page);
+                tabsToPages.put(tab, page);
+                pages.add(page);
+                tabs.add(tab);
+            }
+
+            if (node instanceof PatternNode) {
+                handlePatternResult(node, grid, tab);
+            }
+
+            tabs.setSelectedTab(tab);
+        }
+        tabs.setVisible(true);
+    }
+
+    private void presentDetectResults(Node node) {
+        HashMap<String, Grid<Row>> multipleGrids = createMultipleGrids(node);
+        if (!detectResult.containsKey(node.getId())) {
+            detectResult.put(node.getId(), multipleGrids);
+        }
+
+        if (!expanded.containsKey(node.getId())) {
+            HashMap<String, Boolean> expand = new HashMap<>();
+            for (String s : multipleGrids.keySet()) {
+                expand.put(s, false);
+            }
+            expanded.put(node.getId(), expand);
+        }
+
+        if (!totalDetections.containsKey(node.getId())) {
+            getTotalDetections(node);
+        }
+
+        if (!expectedValues.containsKey(node.getId())) {
+            getExpectedValues(node);
+        }
 
         VerticalScrollLayout page;
-        Tab tab = getTab(node);
-        if (tab != null) {
+        Tab tab;
+        Grid<DetectionOutput> grid = new Grid<>(DetectionOutput.class);
+        grid.setColumns("imperfectionPattern", "detectionAlgorithm", "count");
+        ArrayList<DetectionOutput> detection = new ArrayList<>();
+        grid.addComponentColumn(DetectionOutput::getProgressBar);
+        addIcon(node, grid);
+        grid.setHeightByRows(true);
+        grid.getElement().getStyle().set("margi-top", "5px");
+
+        if (nodeTabs.containsKey(node.getId())) {
+            tab = nodeTabs.get(node.getId());
             page = (VerticalScrollLayout) tabsToPages.get(tab);
             page.removeAll();
-            page.add(grid);
-        }
-        else {
+            for (String s : detectResult.get(node.getId()).keySet()) {
+                if (!expanded.get(node.getId()).get(s)) {
+                    detection.add(new DetectionOutput(findPattern(s), s, totalDetections.get(node.getId()).get(s)
+                            + " of " + node.getInputs().get(0).rowCount(), expectedValues.get(node.getId()).get(s)));
+                } else {
+                    detection.add(new DetectionOutput(findPattern(s), s, totalDetections.get(node.getId()).get(s)
+                            + " of " + node.getInputs().get(0).rowCount(), expectedValues.get(node.getId()).get(s)));
+                    grid.setItems(detection);
+                    page.add(grid);
+                    detection = new ArrayList<>();
+                    grid = new Grid<>(DetectionOutput.class);
+                    grid.setColumns("imperfectionPattern", "detectionAlgorithm", "count");
+                    grid.addComponentColumn(DetectionOutput::getProgressBar);
+                    addIcon(node, grid);
+                    grid.setHeightByRows(true);
+                    grid.getElement().getStyle().set("margi-top", "5px");
+                    Grid<Row> detected = detectResult.get(node.getId()).get(s);
+                    detected.setHeightByRows(true);
+                    detected.getElement().getStyle().set("margin-left", "15px");
+                    detected.getElement().getStyle().set("margin-top", "5px");
+                    detected.getElement().getStyle().set("margin-right", "5px");
+                    page.add(detected);
+                }
+            }
+            if (!detection.isEmpty()) {
+                grid.setItems(detection);
+                page.add(grid);
+            }
+        } else {
             tab = new ResultTab(node);
-            page = new VerticalScrollLayout(grid);
-            removeTopMargin(page);
+            nodeTabs.put(node.getId(), tab);
+            page = new VerticalScrollLayout();
+            for (String s : multipleGrids.keySet()) {
+                    detection.add(new DetectionOutput(findPattern(s), s, totalDetections.get(node.getId()).get(s)
+                            + " of " + node.getInputs().get(0).rowCount(), expectedValues.get(node.getId()).get(s)));
+            }
+            grid.setItems(detection);
+            page.add(grid);
             tabsToPages.put(tab, page);
             pages.add(page);
             tabs.add(tab);
         }
 
-        if (node instanceof PatternNode) {
-            handlePatternResult(node, grid, tab);
-        }
-        
         tabs.setSelectedTab(tab);
-        tabs.setVisible(true);
+    }
+
+    private void getExpectedValues(Node node) {
+        HashMap<String, Double> totalDetection = new HashMap<>();
+        for (Node s : node.getMultipleOutput().keySet()) {
+            totalDetection.put(s.getName(), ((ImperfectionPattern) s.getPlugin()).expectedDetections());
+        }
+        expectedValues.put(node.getId(), totalDetection);
+    }
+
+    private void getTotalDetections(Node node) {
+        HashMap<String, Integer> totalDetection = new HashMap<>();
+        for (Node s : node.getMultipleOutput().keySet()) {
+            totalDetection.put(s.getName(), ((ImperfectionPattern) s.getPlugin()).imperfektionDetected());
+        }
+        totalDetections.put(node.getId(), totalDetection);
+    }
+
+    private void addIcon(Node node, Grid<DetectionOutput> grid) {
+        grid.addComponentColumn(item -> {
+            Icon icon;
+            if (expanded.get(node.getId()).get(item.getDetectionAlgorithm())) {
+                icon = VaadinIcon.ANGLE_UP.create();
+            } else {
+                icon = VaadinIcon.ANGLE_DOWN.create();
+            }
+                icon.setColor("black");
+                icon.setId(item.getDetectionAlgorithm());
+                icon.addClickListener(event -> {
+                    if (expanded.get(node.getId()).get(item.getDetectionAlgorithm())) {
+                        expanded.get(node.getId()).replace(item.getDetectionAlgorithm(), true, false);
+                    } else {
+                        expanded.get(node.getId()).replace(item.getDetectionAlgorithm(), false, true);
+                    }
+                    presentDetectResults(node);
+                });
+
+            return icon;
+        }).setKey("icon").setFlexGrow(0).setWidth("45px");
+    }
+
+    private String findPattern(String s) {
+        for (TreeItem item : _list) {
+            if (item.getParent() != null) {
+                if (item.getParent().getLabel() != null) {
+                    if (item.getLabel() != null) {
+                        if (Objects.equals(item.getLabel(), s)) {
+                            return item.getParent().getLabel();
+                        }
+                    }
+                }
+            }
+        }
+        return "";
     }
 
 
@@ -129,7 +288,7 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
             }
         }
         return null;
-     }
+    }
 
 
     private void handlePatternResult(Node node, Grid<Row> grid, Tab tab) {
@@ -151,8 +310,7 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
             });
             FooterRow footer = grid.appendFooterRow();
             footer.getCells().get(0).setComponent(new HorizontalLayout(btnDont, btnRepair));
-        }
-        else {
+        } else {
             tab.setLabel(node.getName() + " - Repaired");
         }
     }
@@ -164,7 +322,7 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
             tabs.remove(tab);
             pages.remove(div);
         }
-        tabs.setVisible(! tabsToPages.isEmpty());
+        tabs.setVisible(!tabsToPages.isEmpty());
     }
 
 
@@ -178,38 +336,42 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
 
     private Grid<Row> createGrid(Node node) {
         Table table = node.getOutput();
+        return tableToGrid(table);
+    }
+
+    private HashMap<String, Grid<Row>> createMultipleGrids(Node node) {
+        HashMap<String, Grid<Row>> result = new HashMap<>();
+        for (Node s : node.getMultipleOutput().keySet()) {
+            Grid<Row> grid = tableToGrid(node.getMultipleOutput().get(s));
+            result.put(s.getName(), grid);
+        }
+        return result;
+    }
+
+    private Grid<Row> tableToGrid(Table table) {
         Grid<Row> grid = new Grid<>();
         for (String name : table.columnNames()) {
             ColumnType colType = table.column(name).type();
             Grid.Column<Row> column;
             if (colType == ColumnType.STRING) {
                 column = grid.addColumn(row -> row.getString(name));
-            }
-            else if (colType == ColumnType.BOOLEAN) {
+            } else if (colType == ColumnType.BOOLEAN) {
                 column = grid.addColumn(row -> row.getBoolean(name));
-            }
-            else if (colType == ColumnType.INTEGER) {
+            } else if (colType == ColumnType.INTEGER) {
                 column = grid.addColumn(row -> row.getInt(name));
-            }
-            else if (colType == ColumnType.LONG) {
+            } else if (colType == ColumnType.LONG) {
                 column = grid.addColumn(row -> row.getLong(name));
-            }
-            else if (colType == ColumnType.FLOAT) {
+            } else if (colType == ColumnType.FLOAT) {
                 column = grid.addColumn(row -> row.getFloat(name));
-            }
-            else if (colType == ColumnType.DOUBLE) {
+            } else if (colType == ColumnType.DOUBLE) {
                 column = grid.addColumn(row -> row.getDouble(name));
-            }
-            else if (colType == ColumnType.LOCAL_DATE) {
+            } else if (colType == ColumnType.LOCAL_DATE) {
                 column = grid.addColumn(row -> row.getDate(name));
-            }
-            else if (colType == ColumnType.LOCAL_TIME || colType == ColumnType.LOCAL_DATE_TIME) {
+            } else if (colType == ColumnType.LOCAL_TIME || colType == ColumnType.LOCAL_DATE_TIME) {
                 column = grid.addColumn(row -> row.getDateTime(name));
-            }
-            else if (colType == ColumnType.INSTANT) {
+            } else if (colType == ColumnType.INSTANT) {
                 column = grid.addColumn(row -> row.getInstant(name));
-            }
-            else {
+            } else {
                 column = grid.addColumn(row -> row.getObject(name));
             }
 
@@ -217,7 +379,7 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
         }
 
         List<Row> rows = new ArrayList<>();
-        for (int i=0; i < table.rowCount(); i++) {
+        for (int i = 0; i < table.rowCount(); i++) {
             rows.add(table.row(i));
         }
         grid.setItems(rows);
@@ -227,8 +389,8 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
 
     private void repair(Node node, Grid<Row> grid) {
         Table repairs = Table.create("Repairs").addColumns(
-                        StringColumn.create("Incorrect"),
-                        StringColumn.create("Correct"));
+                StringColumn.create("Incorrect"),
+                StringColumn.create("Correct"));
         for (Row row : grid.asMultiSelect().getSelectedItems()) {
             repairs.column(0).appendCell(row.getString("Label2"));
             repairs.column(1).appendCell(row.getString("Label1"));
@@ -252,13 +414,13 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
 
     private Set<ResultTab> getTabs(Node node) {
         Set<ResultTab> tabSet = new HashSet<>();
-        for (int i=0; i < tabs.getComponentCount(); i++) {
-             ResultTab tab = (ResultTab) tabs.getComponentAt(i);
-             if (tab.nodeEquals(node)) {
+        for (int i = 0; i < tabs.getComponentCount(); i++) {
+            ResultTab tab = (ResultTab) tabs.getComponentAt(i);
+            if (tab.nodeEquals(node)) {
                 tabSet.add(tab);
-             }
-         }
-         return tabSet;
+            }
+        }
+        return tabSet;
     }
 
 }

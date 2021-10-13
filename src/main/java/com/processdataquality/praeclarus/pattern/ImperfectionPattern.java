@@ -50,6 +50,22 @@ public interface ImperfectionPattern extends PDQPlugin {
      */
     boolean canDetect();
 
+
+    /**
+     *
+     * @return total detected imperfekt events
+     */
+    int imperfektionDetected();
+
+
+    /**
+     *
+     * return the percentage of events in an event log that are on average affected by the imperfection pattern.
+     * @return value between 0 and 1;
+     */
+    double expectedDetections();
+
+
     /**
      * Determines whether this particular plugin can repair the data
      * @return true if this plugin can repair the data

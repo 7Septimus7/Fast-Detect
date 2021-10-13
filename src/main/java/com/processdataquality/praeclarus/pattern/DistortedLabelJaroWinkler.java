@@ -88,4 +88,14 @@ public class DistortedLabelJaroWinkler extends AbstractDistortedLabel {
         System.out.println(newMaster.toString());
 
     }
+
+    @Override
+    public int imperfektionDetected() {
+        return 20; //TODO just a dummy
+    }
+
+    @Override
+    public double expectedDetections() {
+        return 0.1;
+    }
 }

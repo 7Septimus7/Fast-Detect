@@ -16,6 +16,8 @@
 
 package com.processdataquality.praeclarus.plugin;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * @author Michael Adams
  * @date 6/4/21
@@ -25,6 +27,7 @@ public interface PDQPlugin {
     /**
      * @return A map of configuration parameters for the plugin.
      */
+    @NotNull
     Options getOptions();
 
 
@@ -40,5 +43,4 @@ public interface PDQPlugin {
      * threshold of allowable outputs for this plugin has not yet been reached)
      */
     int getMaxOutputs();
-
 }
