@@ -10,7 +10,7 @@ import tech.tablesaw.api.Table;
         name = "Test",
         author = "Maximilian Harms",
         version = "1.0",
-        synopsis = "test"
+        synopsis = "test dummy"
 )
 @Pattern(group = PatternGroup.POLLUTED_LABEL)
 public class PollutedLabelExample2 implements ImperfectionPattern{
@@ -35,7 +35,7 @@ public class PollutedLabelExample2 implements ImperfectionPattern{
     }
 
     @Override
-    public double expectedDetections() {
+    public double criticalDetections() {
         return 0;
     }
 

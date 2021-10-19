@@ -19,7 +19,7 @@ import java.util.Set;
         name = "Fast Detect",
         author = "Maximilian Harms",
         version = "1.0",
-        synopsis = "TODO."
+        synopsis = "Adapter for automatic quality check of event logs."
 )
 public class FastDetect implements Action{
 

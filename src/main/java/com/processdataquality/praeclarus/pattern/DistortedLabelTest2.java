@@ -8,7 +8,7 @@ import tech.tablesaw.api.StringColumn;
         name = "Test2",
         author = "Maximilian Harms",
         version = "1.0",
-        synopsis = "Test2"
+        synopsis = "Test2 dummy"
 )
 @Pattern(group = PatternGroup.DISTORTED_LABEL)
 public class DistortedLabelTest2 extends AbstractDistortedLabel {
@@ -23,7 +23,7 @@ public class DistortedLabelTest2 extends AbstractDistortedLabel {
     }
 
     @Override
-    public double expectedDetections() {
+    public double criticalDetections() {
         return 0;
     }
 }

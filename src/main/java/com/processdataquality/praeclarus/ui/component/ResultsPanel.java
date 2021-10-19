@@ -171,7 +171,7 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
         Grid<DetectionOutput> grid = new Grid<>(DetectionOutput.class);
         grid.setColumns("imperfectionPattern", "detectionAlgorithm", "count");
         ArrayList<DetectionOutput> detection = new ArrayList<>();
-        grid.addComponentColumn(DetectionOutput::getProgressBar);
+        grid.addComponentColumn(DetectionOutput::getProgressBar).setHeader("Progressbar");
         addIcon(node, grid);
         grid.setHeightByRows(true);
         grid.getElement().getStyle().set("margi-top", "5px");
@@ -192,7 +192,7 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
                     detection = new ArrayList<>();
                     grid = new Grid<>(DetectionOutput.class);
                     grid.setColumns("imperfectionPattern", "detectionAlgorithm", "count");
-                    grid.addComponentColumn(DetectionOutput::getProgressBar);
+                    grid.addComponentColumn(DetectionOutput::getProgressBar).setHeader("Progressbar");
                     addIcon(node, grid);
                     grid.setHeightByRows(true);
                     grid.getElement().getStyle().set("margi-top", "5px");
@@ -229,7 +229,7 @@ public class ResultsPanel extends VerticalLayout implements NodeRunnerListener {
     private void getExpectedValues(Node node) {
         HashMap<String, Double> totalDetection = new HashMap<>();
         for (Node s : node.getMultipleOutput().keySet()) {
-            totalDetection.put(s.getName(), ((ImperfectionPattern) s.getPlugin()).expectedDetections());
+            totalDetection.put(s.getName(), ((ImperfectionPattern) s.getPlugin()).criticalDetections());
         }
         expectedValues.put(node.getId(), totalDetection);
     }

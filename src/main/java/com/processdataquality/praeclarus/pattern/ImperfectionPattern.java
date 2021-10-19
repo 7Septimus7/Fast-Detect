@@ -53,17 +53,18 @@ public interface ImperfectionPattern extends PDQPlugin {
 
     /**
      *
-     * @return total detected imperfekt events
+     * @return total detected imperfekt events form the event log
      */
     int imperfektionDetected();
 
 
     /**
      *
-     * return the percentage of events in an event log that are on average affected by the imperfection pattern.
+     * Decide at what percentage of events affected by the data quality problem on an event log
+     * the progress bar should be 50%.
      * @return value between 0 and 1;
      */
-    double expectedDetections();
+    double criticalDetections();
 
 
     /**

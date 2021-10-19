@@ -95,7 +95,7 @@ public class DistortedLabelJaroWinkler extends AbstractDistortedLabel {
     }
 
     @Override
-    public double expectedDetections() {
-        return 0.1;
+    public double criticalDetections() {
+        return 0.1; //TODO just a dummy
     }
 }
